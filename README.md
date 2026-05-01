@@ -1,4 +1,4 @@
-### FromageFinder
+# FromageFinder
 
 A full-stack cheese discovery platform that helps users explore and find their perfect cheese based on flavor, texture, and preferences — powered by real-world data.  
 Built an interactive recommendation system over 1,100+ cheeses across 50+ countries with dynamic filtering and analytics.
