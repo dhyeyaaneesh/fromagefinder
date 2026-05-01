@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FromageFinder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --cream:   #FFF8E7;
+      --butter:  #F1DEA8;
+      --golden:  #DAA755;
+      --amber:   #E9C579;
+      --orange:  #D97F59;
+      --brown:   #9F6920;
+      --bistre:  #462506;
+      --muted:   #C4A96A;
+      --white:   #FFFFFF;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+
+    body {
+      background: var(--cream);
+      font-family: 'Nunito', sans-serif;
+      color: var(--bistre);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── DISPLAY FONT via CSS ── */
+    .display {
+      font-family: 'Bagel Fat One', cursive;
+      letter-spacing: 0.01em;
+    }
+
+    /* ══════════════════════════
+       NAVBAR
+    ══════════════════════════ */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--cream);
+      border-bottom: 2.5px solid var(--butter);
+      padding: 0 36px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+      box-shadow: 0 2px 16px rgba(218,167,85,0.13);
+    }
+    .nav-logo {
+      font-family: 'Bagel Fat One', cursive;
+      font-size: 1.7rem; color: var(--brown);
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+    }
+    .nav-right { display: flex; align-items: center; gap: 14px; }
+    .nav-user { color: var(--brown); font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; }
+    .logout-btn {
+      background: transparent; color: var(--brown);
+      border: 2px solid var(--golden); padding: 5px 16px;
+      border-radius: 20px; font-family:'Nunito',sans-serif;
+      font-weight: 800; font-size: 0.82rem; cursor: pointer;
+      text-decoration: none; transition: all 0.18s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .logout-btn:hover { background: var(--golden); color: var(--bistre); }
+
+    /* ══════════════════════════
+       STICKY SECTION TABS
+    ══════════════════════════ */
+    .tab-bar {
+      position: sticky; top: 60px; z-index: 190;
+      background: var(--cream); border-bottom: 2px solid var(--butter);
+      display: flex; justify-content: center; gap: 0; padding: 0 24px;
+    }
+    .tab-btn {
+      padding: 14px 32px; border: none; background: transparent;
+      font-family: 'Bagel Fat One', cursive; font-size: 1.05rem;
+      cursor: pointer; color: var(--muted);
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s; display: flex; align-items: center; gap: 7px;
+      margin-bottom: -2px;
+    }
+    .tab-btn.active { color: var(--brown); border-bottom-color: var(--golden); }
+    .tab-btn:hover:not(.active) { color: var(--brown); }
+
+    /* ══════════════════════════
+       SECTIONS GENERAL
+    ══════════════════════════ */
+    section { min-height: 100vh; scroll-margin-top: 112px; }
+    section:nth-child(even) { background: var(--white); }
+
+    /* ══════════════════════════
+       HERO (inside finder section)
+    ══════════════════════════ */
+    .hero {
+      background: var(--golden);
+      padding: 48px 36px 90px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Animated cheese holes */
+    .hero-holes { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+    .hh {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,248,231,0.18);
+      border: 3px solid rgba(255,248,231,0.12);
+      animation: holePulse 4s ease-in-out infinite;
+    }
+    .hh:nth-child(1){ width:90px;height:90px; top:8%; left:4%; animation-delay:0s; }
+    .hh:nth-child(2){ width:55px;height:55px; top:60%; right:6%; animation-delay:1s; }
+    .hh:nth-child(3){ width:38px;height:38px; top:15%; right:18%; animation-delay:2s; }
+    .hh:nth-child(4){ width:72px;height:72px; bottom:18%; left:20%; animation-delay:0.5s; }
+    .hh:nth-child(5){ width:28px;height:28px; top:45%; left:33%; animation-delay:1.5s; }
+    .hh:nth-child(6){ width:48px;height:48px; top:20%; right:40%; animation-delay:2.5s; }
+    @keyframes holePulse {
+      0%,100% { transform: scale(1); opacity:0.7; }
+      50% { transform: scale(1.15); opacity:1; }
+    }
+
+    /* Drip blobs floating */
+    .drip-blob {
+      position: absolute; pointer-events: none;
+      animation: dripFloat 6s ease-in-out infinite;
+    }
+    .drip-blob:nth-child(7) { top:-10px; left:10%; animation-delay:0s; }
+    .drip-blob:nth-child(8) { top:-10px; right:15%; animation-delay:1.5s; }
+    @keyframes dripFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(12px); }
+    }
+
+    .hero h1 {
+      font-family: 'Bagel Fat One', cursive;
+      font-size: clamp(2.6rem, 6vw, 5rem);
+      color: var(--bistre); margin-bottom: 10px;
+      position: relative; line-height: 1.05;
+    }
+    .hero p {
+      font-size: 1rem; font-weight: 600;
+      color: var(--bistre); opacity: 0.72;
+      max-width: 460px; margin: 0 auto;
+      position: relative;
+    }
+    .hero-wave {
+      position: absolute; bottom: -1px; left: 0;
+      width: 100%; height: 54px;
+    }
+
+    /* Floating cheese SVG decoration */
+    .cheese-graphic {
+      position: absolute;
+      animation: cheeseFloat 3s ease-in-out infinite;
+    }
+    .cheese-graphic.left { bottom: 30px; left: 6%; animation-delay: 0s; width: 80px; }
+    .cheese-graphic.right { top: 18px; right: 5%; animation-delay: 1.2s; width: 60px; }
+    @keyframes cheeseFloat {
+      0%,100% { transform: rotate(-5deg) translateY(0); }
+      50% { transform: rotate(5deg) translateY(-10px); }
+    }
+
+    /* ══════════════════════════
+       FINDER – FILTER CARDS
+    ══════════════════════════ */
+    .finder-wrap { padding: 52px 36px 80px; max-width: 1100px; margin: 0 auto; }
+
+    .filter-intro {
+      text-align: center; margin-bottom: 42px;
+    }
+    .filter-intro h2 {
+      font-family: 'Bagel Fat One', cursive; font-size: 1.9rem;
+      color: var(--brown); margin-bottom: 6px;
+    }
+    .filter-intro p { font-size:0.95rem; color:var(--muted); font-weight:600; }
+
+    /* Category filter rows */
+    .filter-row { margin-bottom: 28px; }
+    .filter-row-label {
+      font-family: 'Bagel Fat One', cursive; font-size: 1.1rem; color: var(--brown);
+      margin-bottom: 11px; display: flex; align-items: center; gap: 8px;
+    }
+    .filter-row-label svg { color: var(--golden); }
+
+    .chips-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .chip {
+      padding: 8px 16px;
+      border: 2px solid var(--butter);
+      border-radius: 22px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: all 0.18s;
+      background: var(--white); color: var(--bistre);
+      user-select: none; display: flex; align-items: center; gap: 5px;
+    }
+    .chip:hover { border-color: var(--golden); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(218,167,85,0.2); }
+    .chip.active {
+      background: var(--golden); border-color: var(--brown);
+      color: var(--bistre); box-shadow: 2px 2px 0 var(--brown);
+      transform: translateY(-1px);
+    }
+
+    /* Search + veg row */
+    .extra-row {
+      display: flex; gap: 16px; align-items: center;
+      flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-icon-abs {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none; display: flex;
+    }
+    .search-input {
+      width: 100%; padding: 10px 14px 10px 38px;
+      border: 2px solid var(--butter); border-radius: 22px;
+      font-family: 'Nunito',sans-serif; font-size:0.92rem;
+      background: white; color: var(--bistre); outline: none; transition: all 0.2s;
+    }
+    .search-input:focus { border-color: var(--golden); box-shadow: 0 0 0 3px rgba(218,167,85,0.12); }
+
+    .veg-pill {
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      padding: 8px 16px; border: 2px solid var(--butter); border-radius: 22px;
+      background: white; transition: all 0.18s; font-weight: 700; font-size: 0.88rem;
+      color: var(--bistre);
+    }
+    .veg-pill.on { border-color: #6aaa50; background: #eaffdf; color: #2a6a15; }
+    .toggle-t {
+      width: 36px; height: 18px; background: var(--butter); border-radius: 9px;
+      border: 1.5px solid var(--golden); position: relative; transition: background 0.2s;
+    }
+    .veg-pill.on .toggle-t { background: #6aaa50; border-color: #3a8a30; }
+    .toggle-th {
+      width: 12px; height: 12px; background: white; border-radius: 50%;
+      position: absolute; top: 1px; left: 1px; transition: left 0.2s;
+    }
+    .veg-pill.on .toggle-th { left: 21px; }
+
+    .clear-all {
+      padding: 8px 16px; border: 2px solid var(--butter); border-radius: 22px;
+      background: white; font-family:'Nunito',sans-serif; font-weight:800;
+      font-size: 0.82rem; color: var(--muted); cursor: pointer; transition: all 0.18s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .clear-all:hover { border-color: var(--orange); color: var(--orange); }
+
+    /* Active filters summary */
+    .active-filters-bar {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+      margin-bottom: 22px; min-height: 32px;
+    }
+    .active-filter-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; background: var(--amber); border: 1.5px solid var(--brown);
+      border-radius: 14px; font-size: 0.78rem; font-weight: 800; color: var(--bistre);
+    }
+    .active-filter-pill button {
+      background: none; border: none; cursor: pointer; color: var(--bistre);
+      font-size: 0.9rem; line-height: 1; padding: 0; display: flex; align-items: center;
+    }
+    .no-filter-hint {
+      font-size: 0.82rem; color: var(--muted); font-weight: 600; font-style: italic;
+    }
+
+    /* ── RESULTS ── */
+    .results-section { margin-top: 10px; }
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 10px;
+    }
+    .results-count {
+      font-family: 'Bagel Fat One', cursive; font-size: 1.5rem; color: var(--brown);
+    }
+    .results-count span { color: var(--orange); }
+
+    /* Prompt to pick a filter */
+    .pick-prompt {
+      text-align: center; padding: 80px 20px;
+    }
+    .pick-prompt-graphic { font-size: 5rem; display: block; margin-bottom: 16px; animation: cheeseWobble 2.5s ease-in-out infinite; }
+    @keyframes cheeseWobble { 0%,100%{transform:rotate(-5deg);} 50%{transform:rotate(5deg) scale(1.07);} }
+    .pick-prompt h3 { font-family:'Bagel Fat One',cursive; font-size:1.8rem; color:var(--brown); margin-bottom:8px; }
+    .pick-prompt p { color:var(--muted); font-weight:600; font-size:0.95rem; }
+
+    /* Grid */
+    .cheese-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 20px;
+    }
+    .cheese-card {
+      background: white; border-radius: 20px;
+      border: 2px solid var(--butter);
+      padding: 22px 18px; cursor: pointer;
+      transition: all 0.22s;
+      box-shadow: 3px 3px 0 var(--butter);
+      position: relative; overflow: hidden;
+      animation: cardIn 0.3s ease-out both;
+    }
+    @keyframes cardIn { from{opacity:0;transform:translateY(14px) scale(0.97);} to{opacity:1;transform:none;} }
+    .cheese-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:5px;
+      background: var(--stripe, var(--golden));
+    }
+    .cheese-card:hover { transform:translate(-3px,-3px); box-shadow:6px 6px 0 var(--golden); border-color:var(--golden); }
+
+    /* Inline cheese illustration */
+    .card-illo { margin-bottom: 10px; display: flex; }
+    .cheese-illo {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #F5D57A, var(--golden));
+      position: relative; flex-shrink:0;
+      box-shadow: 2px 2px 6px rgba(159,105,32,0.25);
+    }
+    .cheese-illo::after {
+      content:'';
+      position: absolute; width: 10px; height: 10px; border-radius:50%;
+      background: rgba(218,167,85,0.4); top:28%; left:35%;
+      box-shadow: 12px 8px 0 rgba(218,167,85,0.3), -8px 12px 0 rgba(218,167,85,0.25);
+    }
+    /* Special illlos */
+    .illo-blue { background: radial-gradient(circle at 35% 35%, #b8c8e8, #7890b8); }
+    .illo-goat { background: radial-gradient(circle at 35% 35%, #f0ede0, #ddd8c0); }
+    .illo-sheep { background: radial-gradient(circle at 35% 35%, #f5e8c0, #e8c870); }
+
+    .card-name { font-family:'Bagel Fat One',cursive; font-size:1.05rem; color:var(--bistre); margin-bottom:4px; line-height:1.2; }
+    .card-country { font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:9px; display:flex; align-items:center; gap:4px; }
+    .card-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:9px; }
+    .card-tag { padding:2px 8px; border-radius:8px; font-size:0.7rem; font-weight:700; border:1.5px solid; }
+    .ct-fl { background:#FFF5DC; border-color:var(--amber); color:var(--brown); }
+    .ct-tx { background:#EEF6FF; border-color:#A8CFEE; color:#2a5a7a; }
+    .card-milk { font-size:0.75rem; color:var(--muted); font-weight:700; display:flex; align-items:center; gap:4px; }
+    .card-milk b { color:var(--bistre); }
+
+    .no-results { text-align:center; padding:70px 20px; grid-column:1/-1; }
+    .no-results h3 { font-family:'Bagel Fat One',cursive; font-size:1.5rem; color:var(--brown); margin-bottom:6px; }
+    .no-results p { color:var(--muted); font-weight:600; }
+
+    /* ══════════════════════════
+       QUIZ SECTION
+    ══════════════════════════ */
+    .quiz-section-inner { padding: 56px 36px 80px; max-width: 700px; margin: 0 auto; }
+    .section-hdr { text-align:center; margin-bottom:44px; }
+    .section-hdr h2 { font-family:'Bagel Fat One',cursive; font-size:2.2rem; color:var(--brown); margin-bottom:6px; }
+    .section-hdr p { color:var(--muted); font-weight:600; font-size:0.95rem; }
+
+    .quiz-progress-bar { height:6px; background:var(--butter); border-radius:3px; margin-bottom:30px; overflow:hidden; }
+    .quiz-progress-fill { height:100%; background:var(--golden); border-radius:3px; transition:width 0.4s ease; }
+
+    .question-card {
+      background:white; border:2px solid var(--butter); border-radius:22px;
+      padding:36px 32px; box-shadow:4px 4px 0 var(--butter); margin-bottom:20px;
+    }
+    .q-num { font-size:0.73rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:8px; }
+    .q-text { font-family:'Bagel Fat One',cursive; font-size:1.6rem; color:var(--bistre); margin-bottom:22px; line-height:1.25; }
+    .q-opts { display:flex; flex-direction:column; gap:9px; }
+    .q-opt {
+      padding:12px 16px; border:2px solid var(--butter); border-radius:13px;
+      background:var(--cream); cursor:pointer; font-family:'Nunito',sans-serif;
+      font-weight:700; font-size:0.92rem; color:var(--bistre);
+      transition:all 0.18s; display:flex; align-items:center; gap:10px;
+    }
+    .q-opt:hover { border-color:var(--golden); background:#FFFAED; transform:translateX(5px); }
+    .q-opt.sel { border-color:var(--golden); background:var(--golden); color:var(--bistre); }
+    .q-opt-ico { width:30px; height:30px; background:var(--butter); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.9rem; }
+    .q-opt.sel .q-opt-ico { background:rgba(255,255,255,0.4); }
+
+    .quiz-nav { display:flex; gap:10px; margin-top:6px; }
+    .qbtn {
+      padding:11px 24px; border-radius:13px; font-family:'Bagel Fat One',cursive;
+      font-size:1.05rem; cursor:pointer; transition:all 0.2s;
+      display:flex; align-items:center; gap:6px; border:2px solid;
+    }
+    .qbtn-next { background:var(--golden); border-color:var(--brown); color:var(--bistre); box-shadow:3px 3px 0 var(--brown); }
+    .qbtn-next:hover { transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--brown); }
+    .qbtn-back { background:transparent; border-color:var(--butter); color:var(--muted); }
+    .qbtn-back:hover { border-color:var(--golden); color:var(--brown); }
+
+    .quiz-result { display:none; }
+    .result-card { background:white; border:2px solid var(--golden); border-radius:24px; padding:48px 36px; text-align:center; box-shadow:5px 5px 0 var(--golden); }
+    .r-badge { display:inline-flex; align-items:center; justify-content:center; width:90px; height:90px; background:var(--golden); border-radius:50%; font-size:3rem; margin-bottom:14px; box-shadow:3px 3px 0 var(--brown); }
+    .r-label { font-size:0.82rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:6px; }
+    .r-name { font-family:'Bagel Fat One',cursive; font-size:2.4rem; color:var(--bistre); margin-bottom:10px; }
+    .r-desc { font-size:0.93rem; color:var(--bistre); opacity:0.8; line-height:1.65; max-width:420px; margin:0 auto 22px; }
+    .r-traits { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:24px; }
+    .r-trait { padding:6px 14px; background:var(--cream); border:2px solid var(--golden); border-radius:20px; font-weight:800; font-size:0.83rem; color:var(--brown); }
+    .retry-btn {
+      padding:10px 22px; background:var(--cream); border:2px solid var(--golden);
+      border-radius:12px; font-family:'Bagel Fat One',cursive; font-size:1.05rem; color:var(--brown);
+      cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:7px;
+    }
+    .retry-btn:hover { background:var(--golden); color:var(--bistre); }
+
+    /* ══════════════════════════
+       DASHBOARD SECTION
+    ══════════════════════════ */
+    .dashboard-inner { padding:56px 36px 80px; max-width:1100px; margin:0 auto; }
+    .dash-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:22px; }
+    .chart-card {
+      background:white; border:2px solid var(--butter); border-radius:20px;
+      padding:26px 22px; box-shadow:3px 3px 0 var(--butter);
+    }
+    .chart-card.wide { grid-column:1/-1; }
+    .chart-title { font-family:'Bagel Fat One',cursive; font-size:1.1rem; color:var(--brown); margin-bottom:16px; display:flex; align-items:center; gap:7px; }
+    .chart-card canvas { max-height:270px; }
+    .stat-pills { display:flex; flex-wrap:wrap; gap:10px; }
+    .stat-pill { background:var(--cream); border:2px solid var(--butter); border-radius:14px; padding:12px 18px; display:flex; align-items:center; gap:10px; }
+    .stat-pill-num { font-family:'Bagel Fat One',cursive; font-size:1.7rem; color:var(--brown); line-height:1; }
+    .stat-pill-label { font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+
+    /* ══════════════════════════
+       MODAL
+    ══════════════════════════ */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(70,37,6,0.45);
+      z-index:300; display:flex; align-items:center; justify-content:center;
+      padding:20px; opacity:0; visibility:hidden; transition:all 0.25s;
+    }
+    .modal-overlay.open { opacity:1; visibility:visible; }
+    .modal {
+      background:var(--cream); border-radius:24px; border:2px solid var(--golden);
+      box-shadow:6px 6px 0 var(--golden); width:100%; max-width:520px;
+      max-height:88vh; overflow-y:auto; transform:scale(0.88); transition:transform 0.25s;
+    }
+    .modal-overlay.open .modal { transform:scale(1); }
+    .modal-head { background:var(--golden); padding:26px 26px 20px; border-radius:22px 22px 0 0; position:relative; }
+    .modal-close {
+      position:absolute; top:12px; right:12px; width:30px; height:30px;
+      background:white; border:2px solid var(--brown); border-radius:50%;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      color:var(--bistre); font-size:0.9rem; transition:all 0.2s;
+    }
+    .modal-close:hover { background:var(--orange); color:white; border-color:var(--orange); }
+    .modal-illo { margin-bottom:8px; }
+    .modal-name { font-family:'Bagel Fat One',cursive; font-size:1.9rem; color:var(--bistre); margin-bottom:3px; }
+    .modal-country { font-size:0.83rem; font-weight:700; color:var(--bistre); opacity:0.65; display:flex; align-items:center; gap:4px; }
+    .modal-body { padding:22px 26px; }
+    .drow { display:flex; gap:9px; margin-bottom:10px; align-items:flex-start; }
+    .drow-icon { color:var(--golden); flex-shrink:0; margin-top:1px; }
+    .dlabel { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--brown); margin-bottom:1px; }
+    .dval { font-weight:700; font-size:0.9rem; color:var(--bistre); }
+    .modal-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:14px; }
+    .mtag { padding:4px 12px; border-radius:16px; font-size:0.78rem; font-weight:800; border:2px solid; }
+    .mt-fl { background:var(--amber); color:var(--bistre); border-color:var(--brown); }
+    .mt-tx { background:#ddf0ff; color:#1a4a70; border-color:#7ab8e0; }
+    .mt-ar { background:#eaffd8; color:#2a5a1a; border-color:#8ac860; }
+    .veg-badge { margin-top:12px; display:inline-flex; align-items:center; gap:5px; background:#e8f5e2; border:2px solid #6aaa50; border-radius:10px; padding:5px 12px; font-size:0.8rem; font-weight:800; color:#3a7a25; }
+    .modal-link { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:18px; padding:11px; background:var(--bistre); color:var(--golden); border-radius:12px; text-decoration:none; font-family:'Bagel Fat One',cursive; font-size:0.95rem; transition:all 0.2s; }
+    .modal-link:hover { background:var(--brown); transform:translateY(-1px); }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:700px){
+      .finder-wrap, .quiz-section-inner, .dashboard-inner { padding:32px 18px 60px; }
+      nav { padding:0 16px; }
+      .tab-btn { padding:12px 14px; font-size:0.92rem; }
+      .dash-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#finder" class="nav-logo">🧀 FromageFinder</a>
+  <div class="nav-right">
+    <span class="nav-user">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      {{ user }}
+    </span>
+    <a href="/logout" class="logout-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </a>
+  </div>
+</nav>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="goToSection('finder',this)">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Cheese Finder
+  </button>
+  <button class="tab-btn" onclick="goToSection('quiz',this)">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Personality Quiz
+  </button>
+  <button class="tab-btn" onclick="goToSection('dashboard',this)">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Dashboard
+  </button>
+</div>
+
+<!-- ════════════ SECTION 1: FINDER ════════════ -->
+<section id="finder">
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-holes">
+      <div class="hh"></div><div class="hh"></div><div class="hh"></div>
+      <div class="hh"></div><div class="hh"></div><div class="hh"></div>
+      <!-- Drip SVGs -->
+      <svg class="drip-blob" width="60" height="90" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg" style="top:-5px;left:8%">
+        <path d="M30 0 C30 0 55 20 55 50 C55 70 44 85 30 85 C16 85 5 70 5 50 C5 20 30 0 30 0Z" fill="rgba(255,248,231,0.25)"/>
+      </svg>
+      <svg class="drip-blob" width="45" height="70" viewBox="0 0 45 70" fill="none" xmlns="http://www.w3.org/2000/svg" style="top:-5px;right:12%">
+        <path d="M22 0 C22 0 42 15 42 38 C42 54 33 66 22 66 C11 66 3 54 3 38 C3 15 22 0 22 0Z" fill="rgba(255,248,231,0.2)"/>
+      </svg>
+    </div>
+
+    <!-- Floating cheese wedge left -->
+    <svg class="cheese-graphic left" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="10,70 90,70 50,10" fill="#F5D57A" stroke="#C89830" stroke-width="2"/>
+      <circle cx="35" cy="55" r="7" fill="#E8C050" opacity="0.5"/>
+      <circle cx="62" cy="48" r="5" fill="#E8C050" opacity="0.5"/>
+      <circle cx="50" cy="62" r="4" fill="#E8C050" opacity="0.4"/>
+    </svg>
+
+    <!-- Floating cheese round right -->
+    <svg class="cheese-graphic right" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="36" fill="#F5D57A" stroke="#C89830" stroke-width="2"/>
+      <circle cx="30" cy="38" r="8" fill="#E8C050" opacity="0.45"/>
+      <circle cx="52" cy="30" r="6" fill="#E8C050" opacity="0.45"/>
+      <circle cx="44" cy="52" r="5" fill="#E8C050" opacity="0.4"/>
+    </svg>
+
+    <h1>Find Your Fromage</h1>
+    <p>Pick your flavors, textures & more — we'll find your perfect cheese match from 1,187 varieties!</p>
+
+    <svg class="hero-wave" viewBox="0 0 1440 54" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0,0 C180,54 360,0 540,27 C720,54 900,0 1080,27 C1260,54 1380,0 1440,27 L1440,54 L0,54 Z" fill="#FFF8E7"/>
+    </svg>
+  </div>
+
+  <!-- Filter Area -->
+  <div class="finder-wrap">
+    <div class="filter-intro">
+      <h2>What are you craving?</h2>
+      <p>Select one or more filters below — results appear instantly ✨</p>
+    </div>
+
+    <!-- Flavor row -->
+    <div class="filter-row">
+      <div class="filter-row-label">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/></svg>
+        Flavor
+      </div>
+      <div class="chips-row">
+        <span class="chip" data-f="flavor" data-v="creamy">Creamy</span>
+        <span class="chip" data-f="flavor" data-v="nutty">Nutty</span>
+        <span class="chip" data-f="flavor" data-v="salty">Salty</span>
+        <span class="chip" data-f="flavor" data-v="buttery">Buttery</span>
+        <span class="chip" data-f="flavor" data-v="mild">Mild</span>
+        <span class="chip" data-f="flavor" data-v="fruity">Fruity</span>
+        <span class="chip" data-f="flavor" data-v="earthy">Earthy</span>
+        <span class="chip" data-f="flavor" data-v="pungent">Pungent</span>
+        <span class="chip" data-f="flavor" data-v="sweet">Sweet</span>
+        <span class="chip" data-f="flavor" data-v="milky">Milky</span>
+        <span class="chip" data-f="flavor" data-v="herbaceous">Herby</span>
+        <span class="chip" data-f="flavor" data-v="mushroomy">Mushroomy</span>
+        <span class="chip" data-f="flavor" data-v="acidic">Acidic</span>
+        <span class="chip" data-f="flavor" data-v="caramel">Caramel</span>
+        <span class="chip" data-f="flavor" data-v="floral">Floral</span>
+        <span class="chip" data-f="flavor" data-v="sharp">Sharp</span>
+        <span class="chip" data-f="flavor" data-v="tangy">Tangy</span>
+        <span class="chip" data-f="flavor" data-v="spicy">Spicy</span>
+      </div>
+    </div>
+
+    <!-- Texture row -->
+    <div class="filter-row">
+      <div class="filter-row-label">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Texture
+      </div>
+      <div class="chips-row">
+        <span class="chip" data-f="texture" data-v="soft">Soft</span>
+        <span class="chip" data-f="texture" data-v="creamy">Creamy</span>
+        <span class="chip" data-f="texture" data-v="firm">Firm</span>
+        <span class="chip" data-f="texture" data-v="crumbly">Crumbly</span>
+        <span class="chip" data-f="texture" data-v="smooth">Smooth</span>
+        <span class="chip" data-f="texture" data-v="spreadable">Spreadable</span>
+        <span class="chip" data-f="texture" data-v="dense">Dense</span>
+        <span class="chip" data-f="texture" data-v="gooey">Gooey</span>
+        <span class="chip" data-f="texture" data-v="runny">Runny</span>
+        <span class="chip" data-f="texture" data-v="flaky">Flaky</span>
+        <span class="chip" data-f="texture" data-v="elastic">Elastic</span>
+        <span class="chip" data-f="texture" data-v="chalky">Chalky</span>
+        <span class="chip" data-f="texture" data-v="compact">Compact</span>
+        <span class="chip" data-f="texture" data-v="supple">Supple</span>
+      </div>
+    </div>
+
+    <!-- Milk row -->
+    <div class="filter-row">
+      <div class="filter-row-label">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8l2 6H6L8 2z"/><path d="M6 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        Milk Type
+      </div>
+      <div class="chips-row">
+        <span class="chip" data-f="milk" data-v="cow">🐄 Cow</span>
+        <span class="chip" data-f="milk" data-v="sheep">🐑 Sheep</span>
+        <span class="chip" data-f="milk" data-v="goat">🐐 Goat</span>
+        <span class="chip" data-f="milk" data-v="buffalo">🐃 Buffalo</span>
+        <span class="chip" data-f="milk" data-v="camel">🐪 Camel</span>
+        <span class="chip" data-f="milk" data-v="yak">🦬 Yak</span>
+      </div>
+    </div>
+
+    <!-- Extra: search + veg + clear -->
+    <div class="extra-row">
+      <div class="search-wrap">
+        <span class="search-icon-abs">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" class="search-input" id="search-input" placeholder="Search by name, e.g. Pecorino Romano...">
+      </div>
+      <div class="veg-pill" id="veg-pill" onclick="toggleVeg()">
+        <div class="toggle-t"><div class="toggle-th"></div></div>
+        🌱 Vegetarian only
+      </div>
+      <button class="clear-all" onclick="clearAll()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear all
+      </button>
+    </div>
+
+    <!-- Active filter pills -->
+    <div class="active-filters-bar" id="active-bar">
+      <span class="no-filter-hint">No filters selected — pick something above to find your cheese!</span>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="results-section" style="display:none">
+      <div class="results-header">
+        <div class="results-count" id="results-count">Found <span>0</span> cheeses</div>
+      </div>
+      <div class="cheese-grid" id="cheese-grid"></div>
+    </div>
+
+    <!-- Prompt when no filter -->
+    <div id="pick-prompt" class="pick-prompt">
+      <span class="pick-prompt-graphic">🧀</span>
+      <h3>Pick a flavor or texture!</h3>
+      <p>Your perfect fromage is waiting — just select a filter to reveal it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ SECTION 2: QUIZ ════════════ -->
+<section id="quiz">
+  <div class="quiz-section-inner">
+    <div class="section-hdr">
+      <h2>What's Your Cheese Personality?</h2>
+      <p>5 fun questions → your fromage soulmate 🎉</p>
+    </div>
+    <div id="quiz-main">
+      <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="qprog" style="width:0%"></div></div>
+      <div id="qarea"></div>
+      <div class="quiz-nav" id="qnav">
+        <button class="qbtn qbtn-back" id="qback" onclick="quizBack()" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back
+        </button>
+        <button class="qbtn qbtn-next" id="qnext" onclick="quizNext()">Next <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+    <div id="quiz-result" class="quiz-result">
+      <div class="result-card">
+        <div class="r-badge" id="r-badge">🧀</div>
+        <div class="r-label">Your cheese personality is...</div>
+        <div class="r-name" id="r-name">Brie</div>
+        <div class="r-desc" id="r-desc"></div>
+        <div class="r-traits" id="r-traits"></div>
+        <button class="retry-btn" onclick="restartQuiz()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.85"/></svg>
+          Try Again
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ SECTION 3: DASHBOARD ════════════ -->
+<section id="dashboard">
+  <div class="dashboard-inner">
+    <div class="section-hdr">
+      <h2>Cheese Explorer Dashboard</h2>
+      <p>Data insights across all 1,187 world cheeses</p>
+    </div>
+    <div class="dash-grid">
+      <div class="chart-card wide">
+        <div class="chart-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+          At a Glance
+        </div>
+        <div class="stat-pills">
+          <div class="stat-pill"><div class="stat-pill-num">1,187</div><div class="stat-pill-label">Total Cheeses</div></div>
+          <div class="stat-pill"><div class="stat-pill-num" id="sp-c">–</div><div class="stat-pill-label">Countries</div></div>
+          <div class="stat-pill"><div class="stat-pill-num" id="sp-v">–</div><div class="stat-pill-label">Vegetarian</div></div>
+          <div class="stat-pill"><div class="stat-pill-num" id="sp-m">–</div><div class="stat-pill-label">Milk Types</div></div>
+        </div>
+      </div>
+      <div class="chart-card"><div class="chart-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Top 10 Countries</div><canvas id="cc"></canvas></div>
+      <div class="chart-card"><div class="chart-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> Top Flavors</div><canvas id="cf"></canvas></div>
+      <div class="chart-card"><div class="chart-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg> Milk Types</div><canvas id="cm"></canvas></div>
+      <div class="chart-card"><div class="chart-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Top Textures</div><canvas id="ct"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="moverlay" onclick="closeMo(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <button class="modal-close" onclick="closeMoDirect()">✕</button>
+      <div class="modal-illo" id="m-illo"></div>
+      <div class="modal-name" id="m-name">–</div>
+      <div class="modal-country"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="m-country">–</span></div>
+    </div>
+    <div class="modal-body">
+      <div class="drow"><span class="drow-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><div><div class="dlabel">Milk</div><div class="dval" id="m-milk">–</div></div></div>
+      <div class="drow"><span class="drow-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span><div><div class="dlabel">Type</div><div class="dval" id="m-type">–</div></div></div>
+      <div class="drow"><span class="drow-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><div><div class="dlabel">Fat Content</div><div class="dval" id="m-fat">–</div></div></div>
+      <div class="drow"><span class="drow-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72"/></svg></span><div><div class="dlabel">Color</div><div class="dval" id="m-color">–</div></div></div>
+      <div class="modal-tags" id="m-tags"></div>
+      <div id="m-veg" class="veg-badge" style="display:none">🌱 Vegetarian</div>
+      <a href="#" class="modal-link" id="m-link" target="_blank">Learn More on Cheese.com <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────
+const filters = { flavor:[], texture:[], milk:[] };
+let vegOn = false, searchQ = '', allData = [], chartsBuilt = false;
+
+// ─── TABS ─────────────────────────────────────────────────────────
+function goToSection(id, btn) {
+  document.getElementById(id).scrollIntoView({behavior:'smooth'});
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+const secObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      document.querySelectorAll('.tab-btn').forEach((b,i) => {
+        b.classList.toggle('active', ['finder','quiz','dashboard'][i]===id);
+      });
+      if (id==='dashboard' && !chartsBuilt) buildCharts();
+    }
+  });
+}, {threshold:0.1});
+['finder','quiz','dashboard'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) secObs.observe(el);
+});
+
+// ─── CHIP FILTERS ─────────────────────────────────────────────────
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const f = chip.dataset.f, v = chip.dataset.v;
+    const idx = filters[f].indexOf(v);
+    if (idx > -1) { filters[f].splice(idx,1); chip.classList.remove('active'); }
+    else { filters[f].push(v); chip.classList.add('active'); }
+    fetchAndRender();
+  });
+});
+
+function toggleVeg() {
+  vegOn = !vegOn;
+  document.getElementById('veg-pill').classList.toggle('on', vegOn);
+  fetchAndRender();
+}
+
+function clearAll() {
+  filters.flavor=[]; filters.texture=[]; filters.milk=[];
+  vegOn=false; searchQ='';
+  document.getElementById('search-input').value='';
+  document.getElementById('veg-pill').classList.remove('on');
+  document.querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active'));
+  fetchAndRender();
+}
+
+let stimer;
+document.getElementById('search-input').addEventListener('input', e => {
+  clearTimeout(stimer);
+  stimer = setTimeout(()=>{ searchQ=e.target.value; renderResults(allData); }, 220);
+});
+
+// ─── FETCH ────────────────────────────────────────────────────────
+async function fetchAndRender() {
+  const hasFilter = filters.flavor.length || filters.texture.length || filters.milk.length || vegOn || searchQ.trim();
+  updateActivePills();
+  if (!hasFilter) {
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('pick-prompt').style.display = 'block';
+    allData = [];
+    return;
+  }
+  const p = new URLSearchParams();
+  filters.flavor.forEach(f=>p.append('flavor',f));
+  filters.texture.forEach(t=>p.append('texture',t));
+  filters.milk.forEach(m=>p.append('milk',m));
+  if (vegOn) p.append('vegetarian','true');
+  const res = await fetch('/api/cheeses?'+p.toString());
+  allData = await res.json();
+  document.getElementById('pick-prompt').style.display = 'none';
+  document.getElementById('results-section').style.display = 'block';
+  renderResults(allData);
+}
+
+function updateActivePills() {
+  const bar = document.getElementById('active-bar');
+  const all = [...filters.flavor, ...filters.texture, ...filters.milk, ...(vegOn?['vegetarian']:[])];
+  if (!all.length && !searchQ.trim()) {
+    bar.innerHTML = '<span class="no-filter-hint">No filters selected — pick something above to find your cheese!</span>';
+    return;
+  }
+  bar.innerHTML = all.map(v =>
+    `<span class="active-filter-pill">${v} <button onclick="removeFilter('${v}')">×</button></span>`
+  ).join('') + (searchQ.trim() ? `<span class="active-filter-pill">🔍 "${searchQ}" <button onclick="clearSearch()">×</button></span>` : '');
+}
+
+function removeFilter(v) {
+  ['flavor','texture','milk'].forEach(f => {
+    const i = filters[f].indexOf(v);
+    if (i > -1) filters[f].splice(i,1);
+  });
+  if (v==='vegetarian') vegOn=false;
+  document.querySelectorAll('.chip').forEach(c=>{ if(c.dataset.v===v) c.classList.remove('active'); });
+  document.getElementById('veg-pill').classList.remove('on');
+  fetchAndRender();
+}
+function clearSearch() { searchQ=''; document.getElementById('search-input').value=''; renderResults(allData); }
+
+// ─── RENDER ───────────────────────────────────────────────────────
+function getIllo(c) {
+  const milk = (c.milk||'').toLowerCase();
+  const type = (c.type||'').toLowerCase();
+  let cls = 'cheese-illo';
+  if (type.includes('blue')) cls += ' illo-blue';
+  else if (milk.includes('goat')) cls += ' illo-goat';
+  else if (milk.includes('sheep')) cls += ' illo-sheep';
+  return `<div class="${cls}"></div>`;
+}
+function getStripe(milk) {
+  if (!milk) return '#DAA755';
+  milk = milk.toLowerCase();
+  if (milk.includes('sheep')) return '#E9C579';
+  if (milk.includes('goat')) return '#9FC88A';
+  if (milk.includes('buffalo')) return '#A0C4E8';
+  return '#DAA755';
+}
+function fmt(v) { return (!v||v==='NA')?'—':v; }
+
+function renderResults(data) {
+  const grid = document.getElementById('cheese-grid');
+  let list = [...data];
+  if (searchQ) list = list.filter(c=>c.name.toLowerCase().includes(searchQ.toLowerCase()));
+  list.sort((a,b)=>a.name.localeCompare(b.name));
+  document.getElementById('results-count').innerHTML = `Found <span>${list.length}</span> cheese${list.length!==1?'s':''}`;
+  if (!list.length) {
+    grid.innerHTML='<div class="no-results"><h3>No cheeses found!</h3><p>Try different filters — your fromage is out there!</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map((c,i)=>{
+    const flTags = c.flavor&&c.flavor!=='NA' ? c.flavor.split(',').slice(0,2).map(f=>`<span class="card-tag ct-fl">${f.trim()}</span>`).join('') : '';
+    const txTags = c.texture&&c.texture!=='NA' ? c.texture.split(',').slice(0,1).map(t=>`<span class="card-tag ct-tx">${t.trim()}</span>`).join('') : '';
+    return `<div class="cheese-card" style="--stripe:${getStripe(c.milk)};animation-delay:${Math.min(i*0.02,0.5)}s" onclick='openModal(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
+      <div class="card-illo">${getIllo(c)}</div>
+      <div class="card-name">${c.name}</div>
+      <div class="card-country"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${c.country!=='Unknown'?c.country:'—'}</div>
+      <div class="card-tags">${flTags}${txTags}</div>
+      <div class="card-milk"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> <b>${fmt(c.milk)}</b></div>
+    </div>`;
+  }).join('');
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────
+function openModal(c) {
+  document.getElementById('m-illo').innerHTML = getIllo(c);
+  document.getElementById('m-name').textContent = c.name;
+  document.getElementById('m-country').textContent = c.country!=='Unknown'?c.country:'—';
+  document.getElementById('m-milk').textContent = fmt(c.milk);
+  document.getElementById('m-type').textContent = fmt(c.type);
+  document.getElementById('m-fat').textContent = fmt(c.fat_content);
+  document.getElementById('m-color').textContent = fmt(c.color);
+  document.getElementById('m-link').href = c.url||'#';
+  let tags='';
+  if(c.flavor&&c.flavor!=='NA') c.flavor.split(',').forEach(f=>{tags+=`<span class="mtag mt-fl">${f.trim()}</span>`;});
+  if(c.texture&&c.texture!=='NA') c.texture.split(',').forEach(t=>{tags+=`<span class="mtag mt-tx">${t.trim()}</span>`;});
+  if(c.aroma&&c.aroma!=='NA') c.aroma.split(',').slice(0,2).forEach(a=>{tags+=`<span class="mtag mt-ar">${a.trim()}</span>`;});
+  document.getElementById('m-tags').innerHTML = tags;
+  document.getElementById('m-veg').style.display = c.vegetarian==='TRUE'?'inline-flex':'none';
+  document.getElementById('moverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeMo(e){if(e.target===document.getElementById('moverlay'))closeMoDirect();}
+function closeMoDirect(){document.getElementById('moverlay').classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMoDirect();});
+
+// ─── QUIZ ─────────────────────────────────────────────────────────
+const questions=[
+  {q:"How do you like your flavors?",opts:[
+    {label:"Bold and intense",icon:"🔥",s:{1:2,3:1}},
+    {label:"Mild and subtle",icon:"🌸",s:{0:2,4:1}},
+    {label:"Sweet and fruity",icon:"🍯",s:{0:1,4:1}},
+    {label:"Nutty and complex",icon:"🌰",s:{1:1,5:2}}
+  ]},
+  {q:"What texture do you love most?",opts:[
+    {label:"Soft and gooey",icon:"🫕",s:{0:2}},
+    {label:"Firm and sliceable",icon:"🔪",s:{2:1,5:1}},
+    {label:"Crumbly and rustic",icon:"🪨",s:{1:2,3:1}},
+    {label:"Smooth and spreadable",icon:"🧈",s:{4:2}}
+  ]},
+  {q:"Where are you most at home?",opts:[
+    {label:"French bistro",icon:"🥐",s:{0:2}},
+    {label:"Italian trattoria",icon:"🍝",s:{1:2}},
+    {label:"English countryside",icon:"☕",s:{2:2}},
+    {label:"Swiss mountain chalet",icon:"🏔️",s:{5:2}}
+  ]},
+  {q:"How do you eat your cheese?",opts:[
+    {label:"Melted over everything",icon:"🫠",s:{0:1,5:1}},
+    {label:"On a charcuterie board",icon:"🍇",s:{1:1,2:1}},
+    {label:"Spread on warm bread",icon:"🍞",s:{4:2}},
+    {label:"Straight off the knife",icon:"🧀",s:{2:1,3:1}}
+  ]},
+  {q:"What milk do you prefer?",opts:[
+    {label:"Classic cow",icon:"🐄",s:{2:1,5:1}},
+    {label:"Rich sheep",icon:"🐑",s:{3:2}},
+    {label:"Tangy goat",icon:"🐐",s:{4:2}},
+    {label:"Surprise me!",icon:"✨",s:{0:1}}
+  ]}
+];
+const profiles=[
+  {name:"Brie",emoji:"🫕",desc:"Soft, sophisticated, and universally adored. You love the finer things but stay approachable. A crowd-pleaser with a creamy soul.",traits:["Soft","French","Mild","Creamy"]},
+  {name:"Parmigiano-Reggiano",emoji:"🟡",desc:"Bold, complex, and timeless. You bring depth to every situation. Aged to perfection — people come to you for wisdom.",traits:["Hard","Nutty","Italian","Bold"]},
+  {name:"Cheddar",emoji:"🧀",desc:"Reliable, versatile, and always in demand. You have range — from sharp wit to mild charm — and you pair well with everyone.",traits:["Firm","Versatile","Sharp","Classic"]},
+  {name:"Manchego",emoji:"🐑",desc:"Rich, layered, and a little mysterious. Earthy roots with a refined exterior — that's your signature move.",traits:["Semi-hard","Spanish","Nutty","Earthy"]},
+  {name:"Chèvre",emoji:"⚪",desc:"Fresh, light, and full of character. Tangy, bright, and endlessly versatile — you make everything around you more interesting.",traits:["Fresh","Tangy","Light","Unique"]},
+  {name:"Gruyère",emoji:"🏔️",desc:"Dependable, warm, and deeply satisfying. You melt beautifully under pressure and make everything around you better.",traits:["Semi-hard","Swiss","Nutty","Melty"]}
+];
+let cQ=0, answers=[];
+function renderQ(){
+  const q=questions[cQ];
+  document.getElementById('qprog').style.width=(cQ/questions.length*100)+'%';
+  document.getElementById('qback').style.display=cQ>0?'flex':'none';
+  const isLast=cQ===questions.length-1;
+  document.getElementById('qnext').innerHTML=isLast
+    ?'See My Result! <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+    :'Next <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  document.getElementById('qarea').innerHTML=`
+    <div class="question-card">
+      <div class="q-num">Question ${cQ+1} of ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="q-opts">
+        ${q.opts.map((o,i)=>`<div class="q-opt${answers[cQ]===i?' sel':''}" onclick="selAns(${i})"><div class="q-opt-ico">${o.icon}</div>${o.label}</div>`).join('')}
+      </div>
+    </div>`;
+}
+function selAns(i){
+  answers[cQ]=i;
+  document.querySelectorAll('.q-opt').forEach((el,j)=>el.classList.toggle('sel',j===i));
+}
+function quizNext(){
+  if(answers[cQ]===undefined){
+    const c=document.querySelector('.question-card');
+    c.style.outline='2px solid var(--orange)';
+    setTimeout(()=>c.style.outline='',500);
+    return;
+  }
+  if(cQ<questions.length-1){cQ++;renderQ();}
+  else showResult();
+}
+function quizBack(){if(cQ>0){cQ--;renderQ();}}
+function showResult(){
+  const scores=profiles.map(()=>0);
+  answers.forEach((ai,qi)=>{ const s=questions[qi].opts[ai].s; Object.entries(s).forEach(([k,v])=>scores[+k]+=v); });
+  const best=scores.indexOf(Math.max(...scores));
+  const p=profiles[best];
+  document.getElementById('quiz-main').style.display='none';
+  document.getElementById('quiz-result').style.display='block';
+  document.getElementById('qprog').style.width='100%';
+  document.getElementById('r-badge').textContent=p.emoji;
+  document.getElementById('r-name').textContent=p.name;
+  document.getElementById('r-desc').textContent=p.desc;
+  document.getElementById('r-traits').innerHTML=p.traits.map(t=>`<span class="r-trait">${t}</span>`).join('');
+}
+function restartQuiz(){
+  cQ=0;answers=[];
+  document.getElementById('quiz-result').style.display='none';
+  document.getElementById('quiz-main').style.display='block';
+  renderQ();
+}
+
+// ─── CHARTS ───────────────────────────────────────────────────────
+async function buildCharts(){
+  chartsBuilt=true;
+  const res=await fetch('/api/cheeses/all');
+  const data=await res.json();
+  const pal=['#DAA755','#E9C579','#D97F59','#9F6920','#F1DEA8','#C4A96A','#B88040','#8B5E2E','#F5D57A','#FFAA60'];
+  function countBy(field){
+    const m={};
+    data.forEach(c=>{
+      if(!c[field]||c[field]==='NA')return;
+      c[field].split(',').forEach(v=>{v=v.trim().toLowerCase();if(v)m[v]=(m[v]||0)+1;});
+    });
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+  }
+  const countries=new Set(data.map(c=>c.country).filter(c=>c&&c!=='Unknown'));
+  const veg=data.filter(c=>c.vegetarian==='TRUE').length;
+  const milkTypes=new Set();
+  data.forEach(c=>{if(c.milk&&c.milk!=='NA')c.milk.split(',').forEach(m=>milkTypes.add(m.trim()));});
+  document.getElementById('sp-c').textContent=countries.size;
+  document.getElementById('sp-v').textContent=veg;
+  document.getElementById('sp-m').textContent=milkTypes.size;
+  const topC=Object.entries(data.reduce((a,c)=>{const k=c.country&&c.country!=='Unknown'?c.country:'Unknown';a[k]=(a[k]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  new Chart(document.getElementById('cc'),{type:'bar',data:{labels:topC.map(x=>x[0]),datasets:[{data:topC.map(x=>x[1]),backgroundColor:pal,borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'#F1DEA8'}},x:{grid:{display:false}}},responsive:true}});
+  const topF=countBy('flavor').slice(0,8);
+  new Chart(document.getElementById('cf'),{type:'doughnut',data:{labels:topF.map(x=>x[0]),datasets:[{data:topF.map(x=>x[1]),backgroundColor:pal,borderWidth:2,borderColor:'#FFF8E7'}]},options:{plugins:{legend:{position:'right',labels:{font:{family:'Nunito',size:11},color:'#9F6920'}}},responsive:true}});
+  const milkD=Object.entries(data.reduce((a,c)=>{if(!c.milk||c.milk==='NA')return a;const k=c.milk.split(',')[0].trim();a[k]=(a[k]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  new Chart(document.getElementById('cm'),{type:'pie',data:{labels:milkD.map(x=>x[0]),datasets:[{data:milkD.map(x=>x[1]),backgroundColor:pal,borderWidth:2,borderColor:'#FFF8E7'}]},options:{plugins:{legend:{position:'right',labels:{font:{family:'Nunito',size:11},color:'#9F6920'}}},responsive:true}});
+  const topT=countBy('texture').slice(0,10);
+  new Chart(document.getElementById('ct'),{type:'bar',data:{labels:topT.map(x=>x[0]),datasets:[{data:topT.map(x=>x[1]),backgroundColor:pal,borderRadius:6}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F1DEA8'}},y:{grid:{display:false}}},responsive:true}});
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+renderQ();
+</script>
+</body>
+</html>
